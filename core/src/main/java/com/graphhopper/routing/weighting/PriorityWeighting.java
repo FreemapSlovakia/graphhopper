@@ -24,7 +24,7 @@ import com.graphhopper.routing.util.PriorityCode;
 import com.graphhopper.util.EdgeIteratorState;
 import com.graphhopper.util.PMap;
 
-import static com.graphhopper.routing.util.PriorityCode.BEST;
+import static com.graphhopper.routing.util.PriorityCode.EX_BEST;
 
 /**
  * Special weighting for (motor)bike
@@ -40,8 +40,8 @@ public class PriorityWeighting extends FastestWeighting {
     public PriorityWeighting(FlagEncoder encoder, PMap pMap, TurnCostProvider turnCostProvider) {
         super(encoder, pMap, turnCostProvider);
         priorityEnc = encoder.getDecimalEncodedValue(EncodingManager.getKey(encoder, "priority"));
-        minFactor = 1 / PriorityCode.getValue(BEST.getValue());
-        maxPrio = PriorityCode.getFactor(BEST.getValue());
+        minFactor = 1 / PriorityCode.getValue(EX_BEST.getValue());
+        maxPrio = PriorityCode.getFactor(EX_BEST.getValue());
     }
 
     @Override

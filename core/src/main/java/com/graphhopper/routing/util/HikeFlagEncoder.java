@@ -49,10 +49,10 @@ public class HikeFlagEncoder extends FootFlagEncoder {
     protected HikeFlagEncoder(int speedBits, double speedFactor) {
         super(speedBits, speedFactor);
 
-        routeMap.put(INTERNATIONAL, BEST.getValue());
-        routeMap.put(NATIONAL, BEST.getValue());
-        routeMap.put(REGIONAL, VERY_NICE.getValue());
-        routeMap.put(LOCAL, VERY_NICE.getValue());
+        routeMap.put(INTERNATIONAL, EX_BEST.getValue());
+        routeMap.put(NATIONAL, EX_BEST.getValue());
+        routeMap.put(REGIONAL, EX_VERY_NICE.getValue());
+        routeMap.put(LOCAL, EX_VERY_NICE.getValue());
 
         // hiking allows all sac_scale values
         allowedSacScale.add("alpine_hiking");

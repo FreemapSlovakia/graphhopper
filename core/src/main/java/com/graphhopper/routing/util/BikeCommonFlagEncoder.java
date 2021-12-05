@@ -108,7 +108,7 @@ abstract public class BikeCommonFlagEncoder extends AbstractFlagEncoder {
         setTrackTypeSpeed("grade2", 12); // now unpaved ...
         setTrackTypeSpeed("grade3", 8);
         setTrackTypeSpeed("grade4", 6);
-        setTrackTypeSpeed("grade5", 4); // like sand/grass     
+        setTrackTypeSpeed("grade5", 4); // like sand/grass
 
         setSurfaceSpeed("paved", 18);
         setSurfaceSpeed("asphalt", 18);
@@ -173,10 +173,10 @@ abstract public class BikeCommonFlagEncoder extends AbstractFlagEncoder {
         setHighwaySpeed("bridleway", 6);
         avoidHighwayTags.add("bridleway");
 
-        routeMap.put(INTERNATIONAL, BEST.getValue());
-        routeMap.put(NATIONAL, BEST.getValue());
-        routeMap.put(REGIONAL, VERY_NICE.getValue());
-        routeMap.put(LOCAL, PREFER.getValue());
+        routeMap.put(INTERNATIONAL, EX_BEST.getValue());
+        routeMap.put(NATIONAL, EX_BEST.getValue());
+        routeMap.put(REGIONAL, EX_VERY_NICE.getValue());
+        routeMap.put(LOCAL, EX_PREFER.getValue());
 
         setSmoothnessSpeedFactor(com.graphhopper.routing.ev.Smoothness.MISSING, 1.0d);
         setSmoothnessSpeedFactor(com.graphhopper.routing.ev.Smoothness.OTHER, 0.7d);
@@ -194,7 +194,7 @@ abstract public class BikeCommonFlagEncoder extends AbstractFlagEncoder {
         // first two bits are reserved for route handling in superclass
         super.createEncodedValues(registerNewEncodedValue, prefix);
         registerNewEncodedValue.add(avgSpeedEnc = new UnsignedDecimalEncodedValue(getKey(prefix, "average_speed"), speedBits, speedFactor, speedTwoDirections));
-        registerNewEncodedValue.add(priorityEnc = new UnsignedDecimalEncodedValue(getKey(prefix, "priority"), 4, PriorityCode.getFactor(1), false));
+        registerNewEncodedValue.add(priorityEnc = new UnsignedDecimalEncodedValue(getKey(prefix, "priority"), 5, PriorityCode.getFactor(1), false));
 
         bikeRouteEnc = getEnumEncodedValue(RouteNetwork.key("bike"), RouteNetwork.class);
         smoothnessEnc = getEnumEncodedValue(Smoothness.KEY, Smoothness.class);

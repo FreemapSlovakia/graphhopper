@@ -116,7 +116,7 @@ public class FootFlagEncoder extends AbstractFlagEncoder {
         avoidHighwayTags.add("tertiary_link");
 
         // for now no explicit avoiding #257
-        //avoidHighwayTags.add("cycleway"); 
+        //avoidHighwayTags.add("cycleway");
         allowedHighwayTags.addAll(safeHighwayTags);
         allowedHighwayTags.addAll(avoidHighwayTags);
         allowedHighwayTags.add("cycleway");
@@ -148,7 +148,7 @@ public class FootFlagEncoder extends AbstractFlagEncoder {
         super.createEncodedValues(registerNewEncodedValue, prefix);
         // larger value required - ferries are faster than pedestrians
         registerNewEncodedValue.add(avgSpeedEnc = new UnsignedDecimalEncodedValue(getKey(prefix, "average_speed"), speedBits, speedFactor, speedTwoDirections));
-        registerNewEncodedValue.add(priorityWayEncoder = new UnsignedDecimalEncodedValue(getKey(prefix, "priority"), 4, PriorityCode.getFactor(1), speedTwoDirections));
+        registerNewEncodedValue.add(priorityWayEncoder = new UnsignedDecimalEncodedValue(getKey(prefix, "priority"), 5, PriorityCode.getFactor(1), speedTwoDirections));
 
         footRouteEnc = getEnumEncodedValue(RouteNetwork.key("foot"), RouteNetwork.class);
     }
