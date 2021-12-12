@@ -19,6 +19,7 @@ graphhopper:
   # More are: surface,smoothness,max_width,max_height,max_weight,max_axle_load,max_length,hazmat,hazmat_tunnel,hazmat_water,toll,track_type,
   #           mtb_rating, hike_rating,horse_rating,lanes
   # graph.encoded_values: surface,toll,track_type
+  graph.encoded_values: road_class,road_class_link,road_environment,max_speed,road_access,surface,smoothness,toll,track_type,mtb_rating,hike_rating
 
   ##### Routing Profiles ####
 
@@ -73,9 +74,10 @@ graphhopper:
     - name: foot_fastest
       vehicle: foot
       weighting: fastest
-    - name: wheelchair_fastest
-      vehicle: wheelchair
-      weighting: fastest
+    # doesn't work:
+    # - name: wheelchair_fastest
+    #   vehicle: wheelchair
+    #   weighting: fastest
     - name: car_shortest
       vehicle: car
       weighting: shortest
@@ -151,12 +153,14 @@ graphhopper:
   # profiles with `turn_costs: true` a more elaborate preparation is required (longer preparation time and more memory
   # usage) and the routing will also be slower than with `turn_costs: false`.
   profiles_ch:
-     - profile: hike
-     - profile: hike_fastest
-     - profile: hike_shortest
-     - profile: bike2
-     - profile: bike2_fastest
-     - profile: bike2_shortest
+    - profile: car_fastest
+    - profile: motorcycle_fastest
+    - profile: bike2_fastest
+    - profile: racingbike_fastest
+    - profile: mtb_fastest
+    - profile: hike_fastest
+    - profile: foot_fastest
+    - profile: wheelchair
 
   # Hybrid mode:
   # Similar to speed mode, the hybrid mode (Landmarks, LM) also speeds up routing by doing calculating auxiliary data
@@ -172,7 +176,7 @@ graphhopper:
   ##### Elevation #####
 
   # To populate your graph with elevation data use SRTM, default is noop (no elevation). Read more about it in docs/core/elevation.md
-  graph.elevation.provider: srtm
+  graph.elevation.provider: srtm-freemap
 
   # default location for cache is /tmp/srtm
   graph.elevation.cache_dir: ./srtmprovider/
@@ -187,10 +191,10 @@ graphhopper:
   # against the additional storage space used for edge geometries. You should enable bilinear interpolation when using
   # these features (see #1953 for details).
   # - first, set the distance (in meters) at which elevation samples should be taken on long edges
-  graph.elevation.long_edge_sampling_distance: 60
+  graph.elevation.long_edge_sampling_distance: 30
   # - second, set the elevation tolerance (in meters) to use when simplifying polylines since the default ignores
   #   elevation and will remove the extra points that long edge sampling added
-  graph.elevation.way_point_max_distance: 10
+  graph.elevation.way_point_max_distance: 5
 
   #### Speed, hybrid and flexible mode ####
 
