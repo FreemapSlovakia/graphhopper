@@ -569,6 +569,8 @@ public class GraphHopper {
             elevationProvider = new MultiSourceElevationProvider(cacheDirStr);
         } else if (eleProviderStr.equalsIgnoreCase("skadi")) {
             elevationProvider = new SkadiProvider(cacheDirStr);
+        } else if (eleProviderStr.equalsIgnoreCase("srtm-freemap")) {
+            elevationProvider = new FreemapSrtmProvider(cacheDirStr);
         }
 
         if (elevationProvider instanceof TileBasedElevationProvider) {

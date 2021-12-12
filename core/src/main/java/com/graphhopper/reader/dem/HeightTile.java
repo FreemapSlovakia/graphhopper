@@ -81,7 +81,13 @@ public class HeightTile {
 
     private short getHeightSample(int x, int y) {
         // always keep in mind factor 2 because of short value
-        return heights.getShort(2 * (y * width + x));
+        try {
+            return heights.getShort(2 * (y * width + x));
+        } catch (IndexOutOfBoundsException e) {
+            System.out.println("HHH " + x + ", " + y + ", " + minLat + ", " + minLon + ", " + width + ", " + height);
+
+            return 0;
+        }
     }
 
     private boolean isValidElevation(double elevation) {
