@@ -92,7 +92,7 @@ public class GraphHopper {
     private int defaultSegmentSize = -1;
     private String ghLocation = "";
     private DAType dataAccessDefaultType = DAType.RAM_STORE;
-    private LinkedHashMap<String, String> dataAccessConfig = new LinkedHashMap<>();
+    private final LinkedHashMap<String, String> dataAccessConfig = new LinkedHashMap<>();
     private boolean sortGraph = false;
     private boolean elevation = false;
     private LockFactory lockFactory = new NativeFSLockFactory();
@@ -774,12 +774,6 @@ public class GraphHopper {
                 .build();
         checkProfilesConsistency();
 
-        // todo: move this after base graph loading/import, just like for LM. there is no real reason we have to setup CH before
-        if (chPreparationHandler.isEnabled()) {
-            List<CHConfig> chConfigs = createCHConfigs(chPreparationHandler.getCHProfiles());
-            ghStorage.addCHGraphs(chConfigs);
-        }
-
         if (!new File(ghLocation).exists())
             return false;
 
@@ -917,8 +911,20 @@ public class GraphHopper {
         initLocationIndex();
         importPublicTransit();
 
+        if (closeEarly) {
+            boolean includesCustomProfiles = profilesByName.values().stream().anyMatch(p -> p instanceof CustomProfile);
+            if (!includesCustomProfiles)
+                // when there are custom profiles we must not close way geometry or StringIndex, because
+                // they might be needed to evaluate the custom weightings for the following preparations
+                ghStorage.flushAndCloseGeometryAndNameStorage();
+        }
+
         if (lmPreparationHandler.isEnabled())
             loadOrPrepareLM(closeEarly);
+
+        if (closeEarly)
+            // we needed the location index for the LM preparation, but we don't need it for CH
+            locationIndex.close();
 
         if (chPreparationHandler.isEnabled())
             loadOrPrepareCH(closeEarly);
@@ -1019,43 +1025,38 @@ public class GraphHopper {
     }
 
     protected void loadOrPrepareCH(boolean closeEarly) {
-        boolean prepareCH = true;
         for (CHProfile profile : chPreparationHandler.getCHProfiles())
-            if (!getCHProfileVersion(profile.getProfile()).isEmpty()) {
-                // one of the CH preparations already exists, we won't prepare more
-                prepareCH = false;
-                if (!getCHProfileVersion(profile.getProfile()).equals("" + profilesByName.get(profile.getProfile()).getVersion()))
-                    throw new IllegalArgumentException("CH preparation of " + profile.getProfile() + " already exists in storage and doesn't match configuration");
-            }
-        if (prepareCH) {
-            prepareCH(closeEarly);
-        } else {
-            // we don't prepare more CH preparations, but there is not really anything to 'load' either, because the CH
-            // graphs were loaded with GraphHopperStorage already (without any real reason)
-            // -> do this here instead!
-        }
+            if (!getCHProfileVersion(profile.getProfile()).isEmpty()
+                    && !getCHProfileVersion(profile.getProfile()).equals("" + profilesByName.get(profile.getProfile()).getVersion()))
+                throw new IllegalArgumentException("CH preparation of " + profile.getProfile() + " already exists in storage and doesn't match configuration");
+
+        // we load ch graphs that already exist and prepare the other ones
+        List<CHConfig> chConfigs = createCHConfigs(chPreparationHandler.getCHProfiles());
+        Map<String, RoutingCHGraph> loaded = chPreparationHandler.load(ghStorage, chConfigs);
+        List<CHConfig> configsToPrepare = chConfigs.stream().filter(c -> !loaded.containsKey(c.getName())).collect(Collectors.toList());
+        Map<String, PrepareContractionHierarchies.Result> prepared = prepareCH(closeEarly, configsToPrepare);
+
+        // we map all profile names for which there is CH support to the according CH graphs
         chGraphs = new LinkedHashMap<>();
-        for (CHProfile chProfile : chPreparationHandler.getCHProfiles())
-            chGraphs.put(chProfile.getProfile(), ghStorage.getRoutingCHGraph(chProfile.getProfile()));
+        for (CHProfile profile : chPreparationHandler.getCHProfiles()) {
+            if (loaded.containsKey(profile.getProfile()) && prepared.containsKey(profile.getProfile()))
+                throw new IllegalStateException("CH graph should be either loaded or prepared, but not both: " + profile.getProfile());
+            else if (prepared.containsKey(profile.getProfile())) {
+                setCHProfileVersion(profile.getProfile(), profilesByName.get(profile.getProfile()).getVersion());
+                PrepareContractionHierarchies.Result res = prepared.get(profile.getProfile());
+                chGraphs.put(profile.getProfile(), ghStorage.createCHGraph(res.getCHStorage(), res.getCHConfig()));
+            } else if (loaded.containsKey(profile.getProfile())) {
+                chGraphs.put(profile.getProfile(), loaded.get(profile.getProfile()));
+            } else
+                throw new IllegalStateException("CH graph should be either loaded or prepared: " + profile.getProfile());
+        }
     }
 
-    protected Map<String, PrepareContractionHierarchies.Result> prepareCH(boolean closeEarly) {
-        if (!chGraphs.isEmpty())
-            throw new IllegalStateException("CH graphs were already prepared");
-        ensureWriteAccess();
-        if (closeEarly) {
-            locationIndex.close();
-            boolean includesCustomProfiles = getProfiles().stream().anyMatch(p -> p instanceof CustomProfile);
-            if (!includesCustomProfiles)
-                // when there are custom profiles we must not close way geometry or StringIndex, because
-                // they might be needed to evaluate the custom weighting during CH preparation
-                ghStorage.flushAndCloseEarly();
-        }
+    protected Map<String, PrepareContractionHierarchies.Result> prepareCH(boolean closeEarly, List<CHConfig> configsToPrepare) {
+        if (!configsToPrepare.isEmpty())
+            ensureWriteAccess();
         ghStorage.freeze();
-        Map<String, PrepareContractionHierarchies.Result> result = chPreparationHandler.prepare(ghStorage, closeEarly);
-        for (CHProfile profile : chPreparationHandler.getCHProfiles())
-            setCHProfileVersion(profile.getProfile(), profilesByName.get(profile.getProfile()).getVersion());
-        return result;
+        return chPreparationHandler.prepare(ghStorage, configsToPrepare, closeEarly);
     }
 
     /**
@@ -1066,8 +1067,6 @@ public class GraphHopper {
             if (!getLMProfileVersion(profile.getProfile()).isEmpty()
                     && !getLMProfileVersion(profile.getProfile()).equals("" + profilesByName.get(profile.getProfile()).getVersion()))
                 throw new IllegalArgumentException("LM preparation of " + profile.getProfile() + " already exists in storage and doesn't match configuration");
-        ensureWriteAccess();
-        ghStorage.freeze();
 
         // we load landmark storages that already exist and prepare the other ones
         List<LMConfig> lmConfigs = createLMConfigs(lmPreparationHandler.getLMProfiles());
@@ -1094,6 +1093,9 @@ public class GraphHopper {
     }
 
     protected List<PrepareLandmarks> prepareLM(boolean closeEarly, List<LMConfig> configsToPrepare) {
+        if (!configsToPrepare.isEmpty())
+            ensureWriteAccess();
+        ghStorage.freeze();
         return lmPreparationHandler.prepare(configsToPrepare, ghStorage, locationIndex, closeEarly);
     }
 
@@ -1132,6 +1134,9 @@ public class GraphHopper {
     public void close() {
         if (ghStorage != null)
             ghStorage.close();
+
+        chGraphs.values().forEach(RoutingCHGraph::close);
+        landmarks.values().forEach(LandmarkStorage::close);
 
         if (locationIndex != null)
             locationIndex.close();
