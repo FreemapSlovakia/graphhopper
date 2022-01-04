@@ -74,10 +74,9 @@ graphhopper:
     - name: foot_fastest
       vehicle: foot
       weighting: fastest
-    # doesn't work:
-    # - name: wheelchair_fastest
-    #   vehicle: wheelchair
-    #   weighting: fastest
+    - name: wheelchair_fastest
+      vehicle: wheelchair
+      weighting: fastest
     - name: car_shortest
       vehicle: car
       weighting: shortest
@@ -160,7 +159,7 @@ graphhopper:
     - profile: mtb_fastest
     - profile: hike_fastest
     - profile: foot_fastest
-    - profile: wheelchair
+    - profile: wheelchair_fastest
 
   # Hybrid mode:
   # Similar to speed mode, the hybrid mode (Landmarks, LM) also speeds up routing by doing calculating auxiliary data
